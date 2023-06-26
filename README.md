@@ -15,7 +15,7 @@
 - File System
 
 ## Aula 03
-- Correção exercicio 03
+- Correção exercicio 03 ok
 
 ---
 ### Links Úteis
