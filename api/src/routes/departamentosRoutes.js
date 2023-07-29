@@ -41,14 +41,14 @@ const departamentosRoutes = (app) => {
    *        description: O servidor respondeu com sucesso
    */
   app.get(`${base}/departamentos`, async (req, res) => {
-    const [rows] = await con.query('SELECT * FROM DEPARTAMENTOS')
+    const [rows] = await con.query('SELECT * FROM departamentos')
     res.json(rows)
   })
 
   app.get(`${base}/departamentos/:id_departamento`, async (req, res) => {
     const { id_departamento } = req.params
 
-    const query = 'SELECT * FROM DEPARTAMENTOS WHERE id_departamento = ?'
+    const query = 'SELECT * FROM departamentos WHERE id_departamento = ?'
     const [result] = await con.query(query, [id_departamento])
 
     if (result.length === 0) {
@@ -91,7 +91,7 @@ const departamentosRoutes = (app) => {
     }
     
     try {
-      const [result] = await con.query('INSERT INTO DEPARTAMENTOS (nome, sigla) VALUES (?, ?)', [nome, sigla])
+      const [result] = await con.query('INSERT INTO departamentos (nome, sigla) VALUES (?, ?)', [nome, sigla])
       res.status(201).json(result)
     } catch(e) {
       console.error(`[ERROR] ${e}`)
@@ -113,7 +113,7 @@ const departamentosRoutes = (app) => {
     }
 
     try {
-      const query = 'DELETE FROM DEPARTAMENTOS WHERE id_departamento = ?'
+      const query = 'DELETE FROM departamentos WHERE id_departamento = ?'
       const [result] = await con.query(query, [id_departamento])
 
       // Valida se o registro existe
@@ -143,7 +143,7 @@ const departamentosRoutes = (app) => {
       if (nome) departamento.nome = nome
       if (sigla) departamento.sigla = sigla
 
-      const query = 'UPDATE DEPARTAMENTOS SET ? WHERE id_departamento = ?'
+      const query = 'UPDATE departamentos SET ? WHERE id_departamento = ?'
    
       const [result] = await con.query(query, [departamento, id_departamento])
 
