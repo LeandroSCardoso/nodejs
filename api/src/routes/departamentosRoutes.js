@@ -1,23 +1,90 @@
 import con from '../services/connection.js'
 
 const departamentosRoutes = (app) => {
-
   const base = '/api'
 
-  //GET --------------------
+  /**
+   * @swagger
+   * 
+   * components:
+   *  schemas:
+   *    Departamentos:
+   *      type: object
+   *      required:
+   *        - nome
+   *        - sigla
+   *      properties:
+   *        nome:
+   *          type: string
+   *          description: nome do departamento
+   *        sigla:
+   *          type: string
+   *          description: sigla do departamento
+   *      example:
+   *        nome: ex_depto
+   *        sigla: exd
+   */
+
+
+
+
+  /**
+   * @swagger
+   * 
+   * /api/departamentos:
+   *  get:
+   *    description: Lista todos os departamentos
+   *    produces:
+   *      - application/json
+   *    responses:
+   *      200:
+   *        description: O servidor respondeu com sucesso
+   */
   app.get(`${base}/departamentos`, async (req, res) => {
-
     const [rows] = await con.query('SELECT * FROM DEPARTAMENTOS')
-
     res.json(rows)
   })
 
-  //POST ------------------
+  app.get(`${base}/departamentos/:id_departamento`, async (req, res) => {
+    const { id_departamento } = req.params
+
+    const query = 'SELECT * FROM DEPARTAMENTOS WHERE id_departamento = ?'
+    const [result] = await con.query(query, [id_departamento])
+
+    if (result.length === 0) {
+      res.status(404).json(result)
+      return
+    }
+
+    res.json(result)
+  })
+
+  /**
+   * @swagger
+   * 
+   * /api/departamentos:
+   *  post:
+   *    description: Cadastra um departamento
+   *    produces:
+   *      - application/json
+   *    requestBody:
+   *      required: true
+   *      content:
+   *        application/json:
+   *          schema:
+   *            $ref: '#/components/schemas/Departamentos'
+   *    responses:
+   *      201:
+   *        description: Registro inserido com sucesso
+   *      400:
+   *        description: Parametros insuficientes 
+   *      500:
+   *        description: Erro interno
+   */
   app.post(`${base}/departamentos`, async (req, res) => {
-    
     const { nome, sigla } = req.body
 
-    //validando entradas
+    // Validação antes de executar a query
     if (!nome || !sigla) {
       res.status(400).json({ message: 'One or more fields are unset'})
       return
@@ -29,68 +96,25 @@ const departamentosRoutes = (app) => {
     } catch(e) {
       console.error(`[ERROR] ${e}`)
       if (e.code === 'ER_DUP_ENTRY') {
-        res.status(409).json({ message: e.message })
+        res.status(409).json({ message: e.message, exception: e })
         return
       }
       // Se não tiver encontrado o erro, foi algo critico
       res.status(500).json({ message: e.message })
     }
-
   })
 
+  app.delete(`${base}/departamentos/:id_departamento`, async (req, res) => {
+    const { id_departamento } = req.params
 
-  //PATCH ------------------
-  app.patch(`${base}/departamentos`, async (req, res) => {
-    const { id_departamento, nome, sigla } = req.body
-  
-    // Validação de entrada
-    if (!id_departamento || (!nome && !sigla)) {
-      res.status(400).json({ message: 'Campos não encontrados' })
-      return
-    }
-  
-    try {
-      let query = 'UPDATE DEPARTAMENTOS SET'
-      const values = []
-  
-      if (nome) {
-        query += ' nome = ?,'
-        values.push(nome)
-      }
-  
-      if (sigla) {
-        query += ' sigla = ?,'
-        values.push(sigla)
-      }
-  
-      query = query.slice(0, -1) //DELETO A VIRGULA DA STRING
-  
-      query += ' WHERE id_departamento = ?'
-      values.push(id_departamento)
-  
-      const [result] = await con.query(query, values)
-      res.status(200).json(result)
-    } catch (e) {
-      console.error(`[ERROR] ${e}`)
-      res.status(500).json({ message: 'Error on update record', exception: e })
-    }
-  })
-
-  //DELETE ---------------------------------
-  app.delete(`${base}/departamentos`, async (req, res) => {
-    const { id_departamento } = req.body
-  
-    // Validação de entrada
     if (!id_departamento) {
       res.status(400).json({ message: 'One or more fields are unset' })
       return
     }
-  
+
     try {
       const query = 'DELETE FROM DEPARTAMENTOS WHERE id_departamento = ?'
-      const values = [id_departamento]
-
-      const [result] = await con.query(query, values)
+      const [result] = await con.query(query, [id_departamento])
 
       // Valida se o registro existe
       if (result.affectedRows === 0) {
@@ -99,14 +123,37 @@ const departamentosRoutes = (app) => {
       }
 
       res.json({ message: 'Record was deleted' })
-  
-    } catch (e) {
-      console.error(`[ERROR] ${e}`)
-      res.status(500).json({ message: 'Erro on delete record', exception: e })
+    } catch(e) {
+      res.status(500).json({ message: 'Error on delete record', exception: e })
     }
+
   })
-  
-  
+
+  app.patch(`${base}/departamentos/:id_departamento`, async (req, res) => {
+    const { id_departamento } = req.params
+    const { nome, sigla } = req.body
+
+    if (!id_departamento || (!nome && !sigla)) {
+      res.status(400).json({ message: 'One or more fields are unset' })
+      return
+    }
+
+    try {
+      const departamento = {}
+      if (nome) departamento.nome = nome
+      if (sigla) departamento.sigla = sigla
+
+      const query = 'UPDATE DEPARTAMENTOS SET ? WHERE id_departamento = ?'
+   
+      const [result] = await con.query(query, [departamento, id_departamento])
+
+      res.json(result)
+
+    } catch(e) {
+      res.status(500).json({ message: 'Error on update record', exception: e })
+    }
+
+  })
 }
 
 export default departamentosRoutes
